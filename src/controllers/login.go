@@ -37,6 +37,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	repository := repositories.NewRepositoryOfUsers(db)
 	userSaveInDb, erro := repository.FindByEmail(user.Email)
 	if erro != nil {
+		if erro.Error() == "usuário não encontrado pelo email fornecido" {
+			responses.JsonErrorResponse(w, http.StatusNotFound, erro)
+			return
+		}
 		responses.JsonErrorResponse(w, http.StatusInternalServerError, erro)
 		return
 	}
@@ -47,6 +51,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, _ := auth.CreateToken(user.Id)
+	token, erro := auth.CreateToken(userSaveInDb.Id)
+	if erro != nil {
+		responses.JsonErrorResponse(w, http.StatusInternalServerError, erro)
+		return
+	}
 	w.Write([]byte(token))
 }
